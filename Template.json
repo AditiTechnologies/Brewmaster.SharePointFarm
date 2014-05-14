@@ -668,7 +668,7 @@
                 }
             ],
             "ConfigurationIds": [
-                "SharepointFarmNode",
+                "SetupSharepointFarm",
 				"ProvisionCentralAdmin",
 				"CreateManagedAccounts",
 				"MakeSharePointDBsHighlyAvailable"
@@ -679,7 +679,7 @@
             "Description": "SharePoint App Server VM.",
             "Endpoints": [],            
             "ConfigurationIds": [
-                "SharepointFarmNode",
+                "SetupSharepointFarm",
 				"CreateManagedAccounts"
             ]
         },
