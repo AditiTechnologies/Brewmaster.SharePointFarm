@@ -18,7 +18,7 @@
         {
             "Name": "VnetName",
             "Type": "String",
-            "Description": "Azure Virtual Network for setting up Active Directory and Windows Failover Cluster."
+            "Description": "Azure Virtual Network for setting up highly available SharePoint 2013 farm."
         },
         {
             "Name": "DiskStore",
@@ -1047,7 +1047,7 @@
                         "[xWaitForAzureCluster]WaitForFailoverCluster"
                     ],
                     "Description": null
-                },               
+                },
                 {
                     "Type": "xAzureClusterQuorumMode",
                     "ImportModule": "xAzureFailOverCluster",
