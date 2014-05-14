@@ -657,28 +657,25 @@
             ]
         },
         {
-            "Name": "SharepointAdminServerNode",
+            "Name": "SharepointAppServerNode",
             "Description": "SharePoint App Server AdminSite VM.",
             "Endpoints": [
                 {
                     "Name": "AdminSite",
                     "LocalPort": 20000,
                     "Protocol": "tcp",
-                    "Port": 20000
+                    "Port": 20000,
+					"EnableDirectServerReturn": true,
+                    "Rules": [],
+                    "LoadBalancerProbe": {
+                        "Name": "AdminSite-LB",
+                        "Protocol": "tcp",
+                        "Port": 59999
+                    }
                 }
             ],
             "ConfigurationIds": [
                 "SharepointFarmNode"
-            ]
-        },
-        {
-            "Name": "SharepointAppServerNode",
-            "Description": "SharePoint App Server AppServer VMs.",
-            "Endpoints": [],
-            "ConfigurationIds": [
-                "SharepointFarmNode",
-				"ConfigureCentralAdmin",
-				"CreateManagedAccounts"
             ]
         },
         {
@@ -700,7 +697,6 @@
             ],
             "ConfigurationIds": [
                 "SharepointFarmNode",
-				"CreateManagedAccounts",
                 "SharepointWebServerNode"
             ]
         }
@@ -1330,7 +1326,21 @@
                     "Nodes": [],
                     "Requires": [],
                     "Description": null
-                }                              
+                },
+				{
+                    "Type": "xSharePointManagedAccounts",
+                    "ImportModule": "xAzureSharePointFarm",
+                    "ImportTypeName": "ADITI_xSharePointManagedAccounts",
+                    "Name": "CreateManagedAccounts",
+                    "Args": {
+                        "FarmAdmin": "{{Domain}}\\{{FarmAdminName}}",
+                        "FarmAdminPassword": "{{FarmAdminPassword}}",
+                        "DomainName": "{{Domain}}"
+                    },
+                    "Nodes": [],
+                    "Requires": [],
+                    "Description": null
+                }
             ]
         },
 		{
