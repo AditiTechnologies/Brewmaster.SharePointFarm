@@ -1024,7 +1024,22 @@
                     "Requires": [],
                     "Description": null
                 },                
-                {
+				{
+                    "Type": "xWaitForAzureCluster",
+                    "ImportModule": "xAzureFailOverCluster",
+                    "ImportTypeName": "ADITI_xWaitForAzureCluster",
+                    "Name": "WaitForFailoverCluster",
+                    "Args": {
+                        "Name": "{{ClusterName}}",
+                        "RetryIntervalSec": "%%10",
+                        "RetryCount": "%%100",
+                        "DomainAdministratorCredential": "%%New-Object PSCredential \"{{Domain}}\\{{AdminName}}\", (ConvertTo-SecureString \"{{AdminPassword}}\" -AsPlainText -Force)"
+                    },
+                    "Nodes": [],
+                    "Requires": [],
+                    "Description": null
+                },
+				{
                     "Type": "xSmbShare",
                     "ImportModule": "xSmbShare",
                     "ImportTypeName": "MSFT_xSmbShare",
@@ -1042,6 +1057,23 @@
                     "Requires": [
                         "[xWaitForAzureCluster]WaitForFailoverCluster"
                     ],
+                    "Description": null
+                },
+				{
+                    "Type": "xWaitForAzureClusterQuorumShare",
+                    "ImportModule": "xAzureFailOverCluster",
+                    "ImportTypeName": "ADITI_xWaitForAzureClusterQuorumShare",
+                    "Name": "WaitForClusterQuorumShare",
+                    "Args": {
+                        "QuorumShare": "\\\\quorum\\quorum",
+                        "RetryIntervalSec": "%%10",
+                        "RetryCount": "%%60",
+                        "DomainAdministratorCredential": "%%New-Object PSCredential \"{{Domain}}\\{{AdminName}}\", (ConvertTo-SecureString \"{{AdminPassword}}\" -AsPlainText -Force)"
+                    },
+                    "Nodes": [
+                        "{{SSAOCloudService}}.sql1"
+                    ],
+                    "Requires": [],
                     "Description": null
                 },
                 {
