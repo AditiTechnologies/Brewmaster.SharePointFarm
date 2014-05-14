@@ -657,25 +657,30 @@
             ]
         },
         {
-            "Name": "SharepointAppServerNode",
+            "Name": "SharepointAppServerAdminNode",
             "Description": "SharePoint App Server AdminSite VM.",
             "Endpoints": [
                 {
                     "Name": "AdminSite",
                     "LocalPort": 20000,
                     "Protocol": "tcp",
-                    "Port": 20000,
-					"EnableDirectServerReturn": true,
-                    "Rules": [],
-                    "LoadBalancerProbe": {
-                        "Name": "AdminSite-LB",
-                        "Protocol": "tcp",
-                        "Port": 59999
-                    }
+                    "Port": 20000
                 }
             ],
             "ConfigurationIds": [
-                "SharepointFarmNode"
+                "SharepointFarmNode",
+				"ProvisionCentralAdmin",
+				"CreateManagedAccounts",
+				"MakeSharePointDBsHighlyAvailable"
+            ]
+        },
+		{
+            "Name": "SharepointAppServerNode",
+            "Description": "SharePoint App Server VM.",
+            "Endpoints": [],            
+            "ConfigurationIds": [
+                "SharepointFarmNode",
+				"CreateManagedAccounts"
             ]
         },
         {
@@ -696,8 +701,9 @@
                 }
             ],
             "ConfigurationIds": [
-                "SharepointFarmNode",
-                "SharepointWebServerNode"
+                "SetupSharepointFarm",
+				"CreateManagedAccounts",
+                "ProvisionPublishingSite"
             ]
         }
     ],
@@ -1249,8 +1255,8 @@
             ]
         },
         {
-            "Name": "SharepointFarmNode",
-            "Description": "Initializes VMs in the Sharepoint cloud service",
+            "Name": "SetupSharepointFarm",
+            "Description": "SharePoint farm setup.",
             "Resources": [
                 {
                     "Credential": null,
@@ -1318,7 +1324,9 @@
                         "acctname": "{{Domain}}\\{{FarmAdminName}}"
                     },
                     "Nodes": [],
-                    "Requires": [],
+                    "Requires": [
+                        "[xADUser]CreateSharepointFarmAdminDomainAccount"
+                    ],
                     "Description": null
                 },
                 {
@@ -1356,28 +1364,16 @@
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
                     },
                     "Nodes": [],
-                    "Requires": [],
-                    "Description": null
-                },
-				{
-                    "Type": "xSharePointManagedAccounts",
-                    "ImportModule": "xAzureSharePointFarm",
-                    "ImportTypeName": "ADITI_xSharePointManagedAccounts",
-                    "Name": "CreateManagedAccounts",
-                    "Args": {
-                        "FarmAdmin": "{{Domain}}\\{{FarmAdminName}}",
-                        "FarmAdminPassword": "{{FarmAdminPassword}}",
-                        "DomainName": "{{Domain}}"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
+                    "Requires": [
+                        "[Script]AddSharepointFarmAdminToLocalAdminGroup"
+                    ],
                     "Description": null
                 }
             ]
         },
 		{
-			"Name": "ConfigureCentralAdmin",
-			"Description": "Configures the SharePoint central administration site.",
+			"Name": "ProvisionCentralAdmin",
+			"Description": "Creates the SharePoint central administration site.",
 			"Resources": [
 				{
                     "Type": "xSharePointCentralAdmin",
@@ -1399,7 +1395,7 @@
 		},
 		{
 			"Name": "CreateManagedAccounts",
-			"Description": "Creates managed SharePoint account.",
+			"Description": "Creates managed SharePoint accounts.",
 			"Resources": [
 				{
                     "Type": "xSharePointManagedAccounts",
@@ -1418,8 +1414,8 @@
 			]
 		},
         {
-            "Name": "SharepointWebServerNode",
-            "Description": "Configures the Sharepoint VMs acting as web servers.",
+            "Name": "ProvisionPublishingSite",
+            "Description": "Creates a blank site for quickly publishing web pages.",
             "Resources": [
                 {
                     "Type": "xSharePointWebApplication",
@@ -1442,8 +1438,14 @@
                     "Nodes": [],
                     "Requires": [],
                     "Description": null
-                },
-                {
+                }           
+            ]
+        },
+		{
+			"Name": "MakeSharePointDBsHighlyAvailable",
+			"Description": "Adds SharePoint databases to the SQL Server Availability Group",
+			"Resources": [
+				{
                     "Type": "File",
                     "ImportModule": null,
                     "ImportTypeName": null,
@@ -1454,9 +1456,7 @@
                         "Ensure": "Present",
                         "Force": "False"
                     },
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spweb1"
-                    ],
+                    "Nodes": [],
                     "Requires": [],
                     "Description": null
                 },
@@ -1472,30 +1472,44 @@
                         "Ensure": "Present",
                         "Description": "SharePoint databases backup folder"
                     },
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spweb1"
-                    ],
+                    "Nodes": [],
                     "Requires": [
                         "[File]CreateBackupFolder"
                     ],
                     "Description": null
                 },
-                {
-                    "Credential": "DomainAdmin:local",
-                    "Type": "Script",
+				{
+					"Type": "Package",
                     "ImportModule": null,
                     "ImportTypeName": null,
-                    "Name": "InstallSqlCmdTool",
-                    "GetScript": "@{ SqlCmdExists = (Test-Path \"$env:ProgramFiles\\Microsoft SQL Server\\Client SDK\\ODBC\\110\\Tools\\Binn\\SqlCmd.exe\") }",
-                    "SetScript": "msiexec -i http://download.microsoft.com/download/5/7/2/57249A3A-19D6-4901-ACCE-80924ABEB267/1033/x64/msodbcsql.msi /qn IACCEPTMSODBCSQLLICENSETERMS=YES\r\nmsiexec -i http://download.microsoft.com/download/5/5/B/55BEFD44-B899-4B54-ACD7-506E03142B34/1033/x64/MsSqlCmdLnUtils.msi /qn IACCEPTMSSQLCMDLNUTILSLICENSETERMS=YES",
-                    "TestScript": "If(Test-Path \"$env:ProgramFiles\\Microsoft SQL Server\\Client SDK\\ODBC\\110\\Tools\\Binn\\SqlCmd.exe\")\r\n{\r\n    return $true\r\n}\r\nreturn $false",
-                    "Args": {},
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spweb1"
-                    ],
+                    "Name": "SqlODBC",
+                    "Args": {
+                        "Path": "http://download.microsoft.com/download/5/7/2/57249A3A-19D6-4901-ACCE-80924ABEB267/1033/x64/msodbcsql.msi",
+                        "Name": "msodbcsql.msi",
+						"ProductId": "D795BFD799FAA3A48995F22FF61505D9",
+                        "Ensure": "Present"
+                    },
+                    "Nodes": [],
                     "Requires": [],
                     "Description": null
-                },
+				},
+				{
+					"Type": "Package",
+                    "ImportModule": null,
+                    "ImportTypeName": null,
+                    "Name": "SqlCmdTool",
+                    "Args": {
+                        "Path":"http://download.microsoft.com/download/5/5/B/55BEFD44-B899-4B54-ACD7-506E03142B34/1033/x64/MsSqlCmdLnUtils.msi",
+                        "Name": "MsSqlCmdLnUtils.msi",
+						"ProductId": "9228251A8F6007A448FBB2E0BB744D87",
+                        "Ensure": "Present"
+                    },
+                    "Nodes": [],
+                    "Requires": [
+                        "[Package]SqlODBC"
+                    ],
+                    "Description": null
+				},               
                 {
                     "Type": "xSharePointDatabasesHighAvailability",
                     "ImportModule": "xAzureSharePointFarm",
@@ -1505,20 +1519,18 @@
                         "AvailabilityGroupName": "{{AvailabilityGroupName}}",
                         "SQLNodeNamePrefix": "sql",
                         "NumberOfSQLNodes": "{{NumberOfSQLNodes}}",
-                        "DatabaseBackupPath": "\\\\spweb1\\backup",
+                        "DatabaseBackupPath": "\\\\$env:COMPUTERNAME\\backup",
                         "FarmAdministratorCredential": "%%New-Object PSCredential \"{{Domain}}\\{{FarmAdminName}}\", (ConvertTo-SecureString \"{{FarmAdminPassword}}\" -AsPlainText -Force)",
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
                     },
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spweb1"
-                    ],
+                    "Nodes": [],
                     "Requires": [
                         "[xSmbShare]CreateBackupShare",
-                        "[Script]InstallSqlCmdTool"
+                        "[Package]SqlCmdTool"
                     ],
                     "Description": null
                 }
-            ]
-        }
+			]
+		}
     ]
 }
