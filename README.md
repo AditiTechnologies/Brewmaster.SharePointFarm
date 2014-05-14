@@ -10,6 +10,7 @@ Using the latest available image for SharePoint 2013 in the azure gallery, it wi
 
 ####Limitations
 Following are the limitations of this template. Users can fork this repository and customize the template to fix them or wait for our periodic updates.
+> - The template does not allow selection of a image for the SQL VM.
 > - The template adds just a single data disk of 40 GB to the SQL VMs.
 > - The template does not support the scenario where Active Directory setup has already been performed in the Azure Virtual Network.
 > - The template does not support the scenario where SQL Server Availability Group already exists in the specified Azure Virtual Network.

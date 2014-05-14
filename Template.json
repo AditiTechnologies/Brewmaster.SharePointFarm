@@ -456,7 +456,7 @@
                             }
                         },
                         "ConfigSets": [
-                            "SharepointAdminServerNode"
+                            "SharepointAppServerNode"
                         ],
                         "DeploymentGroup": "SharepointGroup"
                     }
