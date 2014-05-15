@@ -8,6 +8,11 @@ Using the latest available image for SharePoint 2013 in the azure gallery, it wi
 4.The number of app server VMs in the farm is controlled by the input parameter 'AppServerCount'.
 5.The number of web server VMs in the farm is controlled by the input parameter 'WebServerCount'.
 
+####SharePoint Details
+1. Central Admin - http://<SharepointCloudService>.cloudapp.net:20000
+2. Default Website - http://<SharepointCloudService>.cloudapp.net
+NOTE: Use the farm admin credentials (provided at the time of deployment) for authentication.
+
 ####Limitations
 Following are the limitations of this template. Users can fork this repository and customize the template to fix them or wait for our periodic updates.
 > - The template does not allow selection of a image for the SQL VM.
