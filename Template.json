@@ -456,7 +456,7 @@
                             }
                         },
                         "ConfigSets": [
-                            "SharepointAppServerNode"
+                            "SharepointAppServerAdminNode"
                         ],
                         "DeploymentGroup": "SharepointGroup"
                     }
@@ -669,7 +669,7 @@
             ],
             "ConfigurationIds": [
                 "SetupSharepointFarm",
-				"ProvisionCentralAdmin",
+				"ConfigureCentralAdmin",
 				"CreateManagedAccounts",
 				"MakeSharePointDBsHighlyAvailable"
             ]
@@ -1370,7 +1370,7 @@
             ]
         },
 		{
-			"Name": "ProvisionCentralAdmin",
+			"Name": "ConfigureCentralAdmin",
 			"Description": "Creates the SharePoint central administration site.",
 			"Resources": [
 				{
@@ -1383,9 +1383,7 @@
                         "AltUrl": "http://{{SharepointCloudService}}.cloudapp.net:20000",
                         "FarmAdministratorCredential": "%%New-Object PSCredential \"{{Domain}}\\{{FarmAdminName}}\", (ConvertTo-SecureString \"{{FarmAdminPassword}}\" -AsPlainText -Force)"
                     },
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spapp1"
-                    ],
+                    "Nodes": [],
                     "Requires": [],
                     "Description": null
                 }
