@@ -1499,7 +1499,7 @@
                         "Path":"http://download.microsoft.com/download/5/5/B/55BEFD44-B899-4B54-ACD7-506E03142B34/1033/x64/MsSqlCmdLnUtils.msi",
                         "Name": "Microsoft Command Line Utilities 11 for SQL Server",
 						"ProductId": "",
-						"Arguments": "IACCEPTSQLNCLILICENSETERMS=YES",
+						"Arguments": "IACCEPTMSSQLCMDLNUTILSLICENSETERMS=YES",
                         "Ensure": "Present"
                     },
                     "Nodes": [],
