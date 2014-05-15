@@ -1324,9 +1324,7 @@
                         "acctname": "{{Domain}}\\{{FarmAdminName}}"
                     },
                     "Nodes": [],
-                    "Requires": [
-                        "[xADUser]CreateSharepointFarmAdminDomainAccount"
-                    ],
+                    "Requires": [],
                     "Description": null
                 },
                 {
