@@ -1481,8 +1481,9 @@
                     "Name": "SqlODBC",
                     "Args": {
                         "Path": "http://download.microsoft.com/download/5/7/2/57249A3A-19D6-4901-ACCE-80924ABEB267/1033/x64/msodbcsql.msi",
-                        "Name": "msodbcsql.msi",
+                        "Name": "Microsoft ODBC Driver 11 for SQL Server",
 						"ProductId": "D795BFD799FAA3A48995F22FF61505D9",
+						"Arguments":"IACCEPTMSODBCSQLLICENSETERMS=YES",
                         "Ensure": "Present"
                     },
                     "Nodes": [],
@@ -1496,8 +1497,9 @@
                     "Name": "SqlCmdTool",
                     "Args": {
                         "Path":"http://download.microsoft.com/download/5/5/B/55BEFD44-B899-4B54-ACD7-506E03142B34/1033/x64/MsSqlCmdLnUtils.msi",
-                        "Name": "MsSqlCmdLnUtils.msi",
+                        "Name": "Microsoft Command Line Utilities 11 for SQL Server",
 						"ProductId": "9228251A8F6007A448FBB2E0BB744D87",
+						"Arguments": "IACCEPTSQLNCLILICENSETERMS=YES",
                         "Ensure": "Present"
                     },
                     "Nodes": [],
