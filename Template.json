@@ -1286,7 +1286,7 @@
                     "Type": "xWaitAndJoinSharePointFarm",
                     "ImportModule": "xAzureSharePointFarm",
                     "ImportTypeName": "ADITI_xWaitAndJoinSharePointFarm",
-                    "Name": "CreateOrJoinSharepointFarm",
+                    "Name": "JoinSharepointFarm",
                     "Args": {
                         "FarmAdmin": "{{Domain}}\\{{FarmAdminName}}",
                         "FarmAdminPassword": "{{FarmAdminPassword}}",
