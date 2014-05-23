@@ -1296,8 +1296,8 @@
                         "CAContentDbName": "SP_Content_Admin",
                         "LogLocation": "F:\\Logs",
                         "LogDiskSpaceUsageGB": "%%4",
-						"RetryIntervalSec": "%%180",
-                        "RetryCount": "%%40",
+						"RetryIntervalSec": "%%120",
+                        "RetryCount": "%%20",
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
                     },
                     "Requires": [
