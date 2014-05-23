@@ -277,11 +277,6 @@ function ConfigureLogging(
 
 function ConfigureFarm()
 {    
-    If(Test-Path "$env:TEMP\FarmConfigured.txt")
-    {
-        return
-    }
-
     # Install help collections
     Write-Verbose "Install help collections..."
     Install-SPHelpCollection -All
@@ -310,7 +305,5 @@ function ConfigureFarm()
         Write-Verbose "Starting $($timersvc.DisplayName) service..."
         Start-Service $timersvc
         If (!$?) {Throw "Could not start $($timersvc.DisplayName) service!"}
-    }
-
-    New-Item -ItemType File -Path "$env:TEMP\FarmConfigured.txt" -Value "SharePoint configuration complete.." -Force
+    }    
 }

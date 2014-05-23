@@ -41,14 +41,6 @@
             "Maximum": 64
         },
         {
-            "Name": "Domain",
-            "Type": "String",
-            "TypeHint": "domain",
-            "Description": "NetBios domain name for setting up active directory in the specified Azure Virtual Network.",
-            "Minimum": 1,
-            "Maximum": 64
-        },
-        {
             "Name": "ADVMSize",
             "Type": "String",
             "TypeHint": "AzureRoleSize",
@@ -203,6 +195,8 @@
             "Minimum": 8,
             "Maximum": 127
         }
+		{% assign fqdnSplit = FQDN | split: '.' -%}
+		{% assign Domain = fqdnSplit[0] -%}
     ],
     "Network": {
         "DnsServers": [
@@ -295,7 +289,7 @@
                         "ConfigSets": [
                             "RootDomainController"
                         ],
-                        "DeploymentGroup": "ADGroup"
+                        "DeploymentGroup": "ADForest"
                     }
                     ,{
                         "Name": "dc2",
@@ -324,7 +318,7 @@
                         "ConfigSets": [
                             "DomainController"
                         ],
-                        "DeploymentGroup": "ADGroup"
+                        "DeploymentGroup": "ADDomainController"
                     }
                 ],
                 "DnsServers": [
@@ -376,7 +370,7 @@
                             "SSAONode",
                             "FailoverCluster"
                         ],
-                        "DeploymentGroup": "SSAOGroup"
+                        "DeploymentGroup": "SqlAlwaysOn"
                     }
 {% for i in (1..NumberOfSQLNodes) -%}
                     ,{
@@ -412,7 +406,7 @@
                             "FailoverCluster",
                             "SqlAlwaysOnNode"
                         ],
-                        "DeploymentGroup": "SSAOGroup"
+                        "DeploymentGroup": "SqlAlwaysOn"
                     }
 {% endfor -%}
                 ],
@@ -459,7 +453,7 @@
                             "SharepointAppServerAdminNode",
 							"SharepointAppServerNode"
                         ],
-                        "DeploymentGroup": "SharepointGroup"
+                        "DeploymentGroup": "SharepointFarm"
                     }
 {% for i in (2..AppServerCount) -%}
                     ,{
@@ -493,7 +487,7 @@
                         "ConfigSets": [
                             "SharepointAppServerNode"
                         ],
-                        "DeploymentGroup": "SharepointGroup"
+                        "DeploymentGroup": "SharepointFarm"
                     }
 {% endfor -%}
                     ,{
@@ -527,7 +521,7 @@
                         "ConfigSets": [
                             "SharepointWebServerNode"
                         ],
-                        "DeploymentGroup": "SharepointGroup"
+                        "DeploymentGroup": "SharepointFarm"
                     }
 {% for i in (2..WebServerCount) -%}
                     ,{
@@ -561,7 +555,7 @@
                         "ConfigSets": [
                             "SharepointWebServerNode"
                         ],
-                        "DeploymentGroup": "SharepointGroup"
+                        "DeploymentGroup": "SharepointFarm"
                     }
 {% endfor -%}
                 ],
@@ -571,16 +565,20 @@
     ],
     "DeploymentGroups": [
         {
-            "Name": "ADGroup",
-            "Description": "Must fully deploy AD before deploying dependant VMs."
+            "Name": "ADForest",
+            "Description": "Must fully deploy AD forest root before any other domain controllers or domain VMs."
         },
         {
-            "Name": "SSAOGroup",
+            "Name": "SqlAlwaysOn",
             "Description": "Sql AlwaysOn VMs"
         },
         {
-            "Name": "SharepointGroup",
+            "Name": "SharepointFarm",
             "Description": "Sharepoint Vms"
+        },
+		{
+            "Name": "ADDomainController",
+            "Description": "Additional AD domain controllers."
         }
     ],
     "Credentials": [
@@ -706,21 +704,14 @@
             "Name": "SetupADNode",
             "Description": "Install AD Domain Services, Group Policy Management Console, and DNS.",
             "Resources": [
-                {
-                    "Credential": null,
-                    "GetScript": "@{ Disks = Get-Disk; Partitions = Get-Disk | Get-Partition; }",
-                    "SetScript": "\r\nFunction Format-RawDisks\r\n{\r\n    [cmdletbinding()]\r\n    param([char]$nextDriveLetter)\r\n\r\n\tforeach ($disk in Get-Disk | Where PartitionStyle -eq 'RAW')\r\n\t{\r\n\t\tWrite-Verbose \"Formatting disk [$nextDriveLetter]\"\r\n\t\t$disk | Initialize-Disk -PartitionStyle MBR -PassThru |\r\n\t\t\t\tNew-Partition -DriveLetter $nextDriveLetter -UseMaximumSize |\r\n\t\t\t\tFormat-Volume -FileSystem NTFS -Confirm:$false\r\n\r\n\t\t$nextDriveLetter = [char]([int]$nextDriveLetter + 1)\r\n\t}\r\n}\r\nFormat-RawDisks $FirstDriveLetter[0] -ErrorAction Stop",
-                    "TestScript": null,
-                    "Type": "Script",
-                    "ImportModule": null,
-                    "ImportTypeName": null,
+				{
+                    "Type": "xFormatDisks",
+                    "ImportModule": "xAzureDataDisks",
+                    "ImportTypeName": "ADITI_xFormatDisks",
                     "Name": "FormatRawDisks",
                     "Args": {
                         "FirstDriveLetter": "F"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
                 {
                     "Type": "WindowsFeature",
@@ -732,10 +723,7 @@
                         "Ensure": "Present",
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-ADDomainServices.log"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
                 {
                     "Type": "WindowsFeature",
@@ -747,10 +735,7 @@
                         "Ensure": "Present",
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-GPMC.log"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 }
             ],
             "Args": {}
@@ -793,11 +778,9 @@
                     "Nodes": [],
                     "Requires": [
                         "[Script]SetupForest"
-                    ],
-                    "Description": null
+                    ]
                 }
-            ],
-            "Args": {}
+            ]
         },
         {
             "Name": "SetupADDomainController",
@@ -822,10 +805,7 @@
                         "LogPath": "F:\\NTDS",
                         "SysvolPath": "F:\\SYSVOL",
                         "DCRootIPAddress": "10.0.0.4"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": ""
+                    }
                 },
                 {
                     "Type": "Service",
@@ -837,34 +817,24 @@
                         "StartupType": "Automatic",
                         "State": "Running"
                     },
-                    "Nodes": [],
                     "Requires": [
                         "[Script]SetupDC"
-                    ],
-                    "Description": null
+                    ]
                 }
-            ],
-            "Args": {}
+            ]
         },        
         {
             "Name": "InitializeSSAONode",
             "Description": "Initializes VMs in the SqlServerAlwaysOn cloud service",
             "Resources": [
                 {
-                    "Credential": null,
-                    "GetScript": "@{ Disks = Get-Disk; Partitions = Get-Disk | Get-Partition; }",
-                    "SetScript": "\r\nFunction Format-RawDisks\r\n{\r\n    [cmdletbinding()]\r\n    param([char]$nextDriveLetter)\r\n\r\n\tforeach ($disk in Get-Disk | Where PartitionStyle -eq 'RAW')\r\n\t{\r\n\t\tWrite-Verbose \"Formatting disk [$nextDriveLetter]\"\r\n\t\t$disk | Initialize-Disk -PartitionStyle MBR -PassThru |\r\n\t\t\t\tNew-Partition -DriveLetter $nextDriveLetter -UseMaximumSize |\r\n\t\t\t\tFormat-Volume -FileSystem NTFS -Confirm:$false\r\n\r\n\t\t$nextDriveLetter = [char]([int]$nextDriveLetter + 1)\r\n\t}\r\n}\r\nFormat-RawDisks $FirstDriveLetter[0] -ErrorAction Stop",
-                    "TestScript": null,
-                    "Type": "Script",
-                    "ImportModule": null,
-                    "ImportTypeName": null,
+                    "Type": "xFormatDisks",
+                    "ImportModule": "xAzureDataDisks",
+                    "ImportTypeName": "ADITI_xFormatDisks",
                     "Name": "FormatRawDisks",
                     "Args": {
                         "FirstDriveLetter": "F"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
                 {
                     "Type": "WindowsFeature",
@@ -876,10 +846,7 @@
                         "Ensure": "Present",
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-FailoverCluster.log"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
                 {
                     "Type": "WindowsFeature",
@@ -892,11 +859,9 @@
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-RSATClusteringMgmt.log"
                     },
-                    "Nodes": [],
                     "Requires": [
                         "[WindowsFeature]FailoverClustering"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "WindowsFeature",
@@ -909,11 +874,9 @@
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-RSATClusteringPowershell.log"
                     },
-                    "Nodes": [],
                     "Requires": [
                         "[WindowsFeature]RSATClusteringMgmt"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "WindowsFeature",
@@ -926,11 +889,9 @@
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-RSATClusteringCmdInterface.log"
                     },
-                    "Nodes": [],
                     "Requires": [
                         "[WindowsFeature]RSATClusteringPowerShell"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "WindowsFeature",
@@ -945,9 +906,7 @@
                     },
                     "Nodes": [
                         "{{SSAOCloudService}}.sql1"
-                    ],
-                    "Requires": [],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "xADUser",
@@ -966,9 +925,8 @@
                     ],
                     "Requires": [
                         "[WindowsFeature]RSATADPowershell"
-                    ],
-                    "Description": null
-                },
+                    ]
+                },                
                 {
                     "Type": "File",
                     "ImportModule": null,
@@ -982,10 +940,8 @@
                     },
                     "Nodes": [
                         "{{SSAOCloudService}}.quorum"
-                    ],
-                    "Requires": [],
-                    "Description": null
-                },
+                    ]
+                },               
                 {
                     "Credential": "DomainAdmin:local",
                     "Type": "Script",
@@ -997,10 +953,7 @@
                     "TestScript": null,
                     "Args": {
                         "acctname": "{{Domain}}\\{{AdminName}}"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 }
             ]
         },
@@ -1020,10 +973,8 @@
                     },
                     "Nodes": [
                         "{{SSAOCloudService}}.sql1"
-                    ],
-                    "Requires": [],
-                    "Description": null
-                },                
+                    ]
+                },
 				{
                     "Type": "xWaitForAzureCluster",
                     "ImportModule": "xAzureFailOverCluster",
@@ -1034,12 +985,9 @@
                         "RetryIntervalSec": "%%10",
                         "RetryCount": "%%100",
                         "DomainAdministratorCredential": "%%New-Object PSCredential \"{{Domain}}\\{{AdminName}}\", (ConvertTo-SecureString \"{{AdminPassword}}\" -AsPlainText -Force)"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
-				{
+                {
                     "Type": "xSmbShare",
                     "ImportModule": "xSmbShare",
                     "ImportTypeName": "MSFT_xSmbShare",
@@ -1056,8 +1004,7 @@
                     ],
                     "Requires": [
                         "[xWaitForAzureCluster]WaitForFailoverCluster"
-                    ],
-                    "Description": null
+                    ]
                 },
 				{
                     "Type": "xWaitForAzureClusterQuorumShare",
@@ -1072,9 +1019,7 @@
                     },
                     "Nodes": [
                         "{{SSAOCloudService}}.sql1"
-                    ],
-                    "Requires": [],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "xAzureClusterQuorumMode",
@@ -1090,8 +1035,7 @@
                     ],
                     "Requires": [
                         "[xWaitForAzureClusterQuorumShare]WaitForClusterQuorumShare"
-                    ],
-                    "Description": null
+                    ]
                 }
             ]
         },
@@ -1136,21 +1080,19 @@
                     "Description": null
                 },
                 {
-                    "Credential": "DomainAdmin:local",
-                    "Type": "Script",
-                    "ImportModule": null,
-                    "ImportTypeName": null,
+                    "Type": "xFirewall",
+                    "ImportModule": "xNetworking",
+                    "ImportTypeName": "MSFT_xFirewall",
                     "Name": "SqlServerLoadBalancedEndpointRule",
-                    "GetScript": "@{ FirewallRuleName =  \"SQL AG Listener LB Probe (TCP-In)\" }",
-                    "SetScript": "$nodeName = $env:COMPUTERNAME\r\nIf($nodeName.IndexOf($SQLNodeNamePrefix, [System.StringComparison]::OrdinalIgnoreCase) -gt -1)\r\n{\r\n    $LoadBalancerProbeRuleName = \"SQL AG Listener LB Probe (TCP-In)($LoadBalancerProbePort)\"\r\n    Import-Module NetSecurity -DisableNameChecking\r\n    if (!(Get-NetFirewallRule -DisplayName $LoadBalancerProbeRuleName -ErrorAction Ignore))\r\n    {\r\n\t    Write-Verbose \"Adding firewall rule '$LoadBalancerProbeRuleName'\"\r\n\t    New-NetFirewallRule -DisplayName $LoadBalancerProbeRuleName -Enabled True `\r\n\t        -Action Allow -Direction Inbound -LocalPort $LoadBalancerProbePort -Protocol TCP -IcmpType Any | Out-Null\r\n    }\r\n}",
-                    "TestScript": null,
                     "Args": {
-                        "SQLNodeNamePrefix": "sql",
-                        "LoadBalancerProbePort": "59999"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                        "Name": "SQL AG Listener LB Probe (TCP-In)",
+                        "Description": "SQL AG Listener LB Probe (TCP-In)",
+                        "LocalPort": "59999",
+                        "Protocol": "TCP",
+                        "Access": "Allow",
+                        "State": "Enabled",
+                        "Direction": "Inbound"
+                    }
                 },
                 {
                     "Credential": "DomainAdmin:local",
@@ -1168,9 +1110,9 @@
                     "Requires": [
                         "[xFirewall]SqlServerTcpInRule",
                         "[xFirewall]SqlServerHAReplicaRule",
-                        "[Script]SqlServerLoadBalancedEndpointRule"
+                        "[xFirewall]SqlServerLoadBalancedEndpointRule"
                     ],
-                    "Description": null
+                    "Description": "Enables SQL authentication and the built-in sa account"
                 },
                 {
                     "Type": "xSqlHAService",
@@ -1185,8 +1127,7 @@
                     "Nodes": [],
                     "Requires": [
                         "[Script]ConfigureSqlDbaAccount"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Credential": "DomainAdmin:local",
@@ -1194,17 +1135,18 @@
                     "ImportModule": null,
                     "ImportTypeName": null,
                     "Name": "CreateSqlAlwaysOnEndpoint",
-                    "GetScript": "@{ ServerInstance = $env:COMPUTERNAME; AllowedUser = $ServiceAccount; EndPointName = MyMirroringEndpoint; PortNumber = 5022; Configured = [bool] [int](OSQL -S $InstanceName -E -Q \"select count(*) from master.sys.endpoints where name = '$Name'\" -h-1)[0] }",
-                    "SetScript": "$server = $env:COMPUTERNAME\r\n$serverPath   = \"SQLSERVER:\\SQL\\$server\\Default\"\r\n$endpointName = \"MyMirroringEndpoint\"\r\n$endpointPort = 5022\r\n$endpointPath = \"$serverPath\\Endpoints\\$endpointName\"\r\nNew-SqlHadrEndpoint -Path $serverPath -Name $endpointName -Port $endpointPort -EA Stop | Out-Null\r\nWrite-Verbose \"Created Endpoint [$endpointName] on port [$endpointPort]\"\r\nSet-SqlHadrEndpoint -Path $endpointPath -State \"Started\" -EA Continue | Out-Null\r\nWrite-Verbose \"Starting Endpoint [$endpointName] (if not already started)\"\r\nInvoke-SqlCmd -Query \"GRANT CONNECT ON ENDPOINT::[$endpointName] TO [$SqlServiceAccount]\" -ServerInstance $server\r\nWrite-Verbose \"Granting endpoint connect permissions to [$SqlServiceAccount]\"",
-                    "TestScript": "$endpoint = OSQL -S $env:COMPUTERNAME -E -Q \"select count(*) from master.sys.endpoints where name = 'MyMirroringEndpoint'\" -h-1\r\nreturn ([bool] [int] $endpoint[0].Trim() )",
+                    "GetScript": "@{ ServerInstance = $env:COMPUTERNAME; AllowedUser = $ServiceAccount; EndPointName = $EndPointName; PortNumber = $EndPointPort; Configured = [bool] [int](OSQL -S $InstanceName -E -Q \"select count(*) from master.sys.endpoints where name = '$EndPointName'\" -h-1)[0] }",
+                    "SetScript": "\r\n$serverPath   = \"SQLSERVER:\\SQL\\$env:COMPUTERNAME\\Default\"\r\n$endpointPath = \"$serverPath\\Endpoints\\$EndpointName\"\r\nNew-SqlHadrEndpoint -Path $serverPath -Name $EndPointName -Port $EndPointPort -EA Stop | Out-Null\r\nWrite-Verbose \"Created Endpoint [$endpointName] on port [$endpointPort]\"\r\nSet-SqlHadrEndpoint -Path $endpointPath -State \"Started\" -EA Continue | Out-Null\r\nWrite-Verbose \"Starting Endpoint [$EndPointName] (if not already started)\"\r\nInvoke-SqlCmd -Query \"GRANT CONNECT ON ENDPOINT::[$EndPointName] TO [$SqlServiceAccount]\" -ServerInstance $env:COMPUTERNAME\r\nWrite-Verbose \"Granting endpoint connect permissions to [$SqlServiceAccount]\"",
+                    "TestScript": "$endpoint = OSQL -S $env:COMPUTERNAME -E -Q \"select count(*) from master.sys.endpoints where name = '$EndPointName'\" -h-1\r\nreturn ([bool] [int] $endpoint[0].Trim() )",
                     "Args": {
+						"EndPointName": "MyMirroringEndpoint",
+						"EndPointPort": "%%5022",
                         "SqlServiceAccount": "{{Domain}}\\{{SqlSvcAccountName}}"
                     },
-                    "Nodes": [],
                     "Requires": [
                         "[xSqlHAService]EnableSqlAlwaysOn"
                     ],
-                    "Description": null
+                    "Description": "Creates SQL Server mirroring endpoint for participating in availability group."
                 },
                 {
                     "Type": "xSqlHAGroup",
@@ -1223,8 +1165,7 @@
                     ],
                     "Requires": [
                         "[Script]CreateSqlAlwaysOnEndpoint"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "xAzureAvailabilityGroupListener",
@@ -1243,30 +1184,22 @@
                     ],
                     "Requires": [
                         "[xSqlHAGroup]CreateAvailabilityGroup"
-                    ],
-                    "Description": null
+                    ]
                 }
             ]
         },
-        {
+		{
             "Name": "SetupSharepointFarm",
             "Description": "SharePoint farm setup.",
             "Resources": [
                 {
-                    "Credential": null,
-                    "GetScript": "@{ Disks = Get-Disk; Partitions = Get-Disk | Get-Partition; }",
-                    "SetScript": "\r\nFunction Format-RawDisks\r\n{\r\n    [cmdletbinding()]\r\n    param([char]$nextDriveLetter)\r\n\r\n\tforeach ($disk in Get-Disk | Where PartitionStyle -eq 'RAW')\r\n\t{\r\n\t\tWrite-Verbose \"Formatting disk [$nextDriveLetter]\"\r\n\t\t$disk | Initialize-Disk -PartitionStyle MBR -PassThru |\r\n\t\t\t\tNew-Partition -DriveLetter $nextDriveLetter -UseMaximumSize |\r\n\t\t\t\tFormat-Volume -FileSystem NTFS -Confirm:$false\r\n\r\n\t\t$nextDriveLetter = [char]([int]$nextDriveLetter + 1)\r\n\t}\r\n}\r\nFormat-RawDisks $FirstDriveLetter[0] -ErrorAction Stop",
-                    "TestScript": null,
-                    "Type": "Script",
-                    "ImportModule": null,
-                    "ImportTypeName": null,
+                    "Type": "xFormatDisks",
+                    "ImportModule": "xAzureDataDisks",
+                    "ImportTypeName": "ADITI_xFormatDisks",
                     "Name": "FormatRawDisks",
                     "Args": {
                         "FirstDriveLetter": "F"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
                 {
                     "Type": "WindowsFeature",
@@ -1281,9 +1214,7 @@
                     },
                     "Nodes": [
                         "{{SharepointCloudService}}.spapp1"
-                    ],
-                    "Requires": [],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "xADUser",
@@ -1302,8 +1233,7 @@
                     ],
                     "Requires": [
                         "[WindowsFeature]RSATADPowershell"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Credential": "DomainAdmin:local",
@@ -1316,10 +1246,7 @@
                     "TestScript": null,
                     "Args": {
                         "acctname": "{{Domain}}\\{{FarmAdminName}}"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
                 {
                     "Type": "xSharePointAccounts",
@@ -1336,8 +1263,7 @@
                     ],
                     "Requires": [
                         "[xADUser]CreateSharepointFarmAdminDomainAccount"
-                    ],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "xSharePointFarm",
@@ -1355,11 +1281,12 @@
                         "LogDiskSpaceUsageGB": "%%4",
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
                     },
-                    "Nodes": [],
+					"Nodes": [
+                        "{{SharepointCloudService}}.spapp1"
+                    ],
                     "Requires": [
                         "[Script]AddSharepointFarmAdminToLocalAdminGroup"
-                    ],
-                    "Description": null
+                    ]
                 },
 				{
                     "Type": "xSharePointCentralAdmin",
@@ -1373,9 +1300,7 @@
                     },
                     "Nodes": [
                         "{{SharepointCloudService}}.spapp1"
-                    ],
-                    "Requires": [],
-                    "Description": null
+                    ]
                 },
 				{
                     "Type": "xSharePointManagedAccounts",
@@ -1386,10 +1311,7 @@
                         "FarmAdmin": "{{Domain}}\\{{FarmAdminName}}",
                         "FarmAdminPassword": "{{FarmAdminPassword}}",
                         "DomainName": "{{Domain}}"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 }
             ]
         },		
@@ -1414,10 +1336,7 @@
                         "SiteOwner": "{{Domain}}\\{{FarmAdminName}}",
                         "FarmAdministratorCredential": "%%New-Object PSCredential \"{{Domain}}\\{{FarmAdminName}}\", (ConvertTo-SecureString \"{{FarmAdminPassword}}\" -AsPlainText -Force)",
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
-                    },
-                    "Nodes": [],
-                    "Requires": [],
-                    "Description": null
+                    }
                 },
 				{
                     "Type": "File",
@@ -1432,9 +1351,7 @@
                     },
                     "Nodes": [
                         "{{SharepointCloudService}}.spweb1"
-                    ],
-                    "Requires": [],
-                    "Description": null
+                    ]
                 },
                 {
                     "Type": "xSmbShare",
@@ -1453,8 +1370,7 @@
                     ],
                     "Requires": [
                         "[File]CreateBackupFolder"
-                    ],
-                    "Description": null
+                    ]
                 },
 				{
 					"Type": "Package",
@@ -1470,9 +1386,7 @@
                     },
                     "Nodes": [
                         "{{SharepointCloudService}}.spweb1"
-                    ],
-                    "Requires": [],
-                    "Description": null
+                    ]
 				},
 				{
 					"Type": "Package",
@@ -1491,8 +1405,7 @@
                     ],
                     "Requires": [
                         "[Package]SqlODBC"
-                    ],
-                    "Description": null
+                    ]
 				},               
                 {
                     "Type": "xSharePointDatabasesHighAvailability",
@@ -1513,8 +1426,7 @@
                     "Requires": [
                         "[xSmbShare]CreateBackupShare",
                         "[Package]SqlCmdTool"
-                    ],
-                    "Description": null
+                    ]
                 }
             ]
         }
