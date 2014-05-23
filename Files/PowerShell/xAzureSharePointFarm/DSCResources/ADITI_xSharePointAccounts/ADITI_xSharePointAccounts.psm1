@@ -1,5 +1,5 @@
 ﻿#
-# xAzureCluster: DSC resource to configure a Failover Cluster consisting of Windows Azure VMs.
+# xSharePointAccounts: DSC resource to create Active Directory user accounts for SharePoint.
 #
 
 #

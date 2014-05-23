@@ -1,5 +1,5 @@
 ﻿#
-# xSharePointFarm: DSC resource to create SharePoint farm on Windows Azure VM.
+# xWaitAndJoinSharePointFarm: DSC resource to wait for SharePoint farm to get created and then join it.
 #
 
 #
@@ -27,6 +27,12 @@ function Get-TargetResource
         [parameter(Mandatory)]
         [string] $CAContentDbName,
 
+		[parameter(Mandatory)]
+		[UInt64] $RetryIntervalSec,
+        
+		[parameter(Mandatory)]
+		[UInt32] $RetryCount,
+		
         [parameter(Mandatory)]
         [string] $LogLocation,
 
@@ -36,8 +42,8 @@ function Get-TargetResource
         [parameter(Mandatory)]
         [PSCredential] $SqlAdministratorCredential
     )       
-
-    $spFarm = $null
+	
+	$spFarm = $null
 	$FarmAdministratorCredential = New-Object PSCredential $FarmAdmin, (ConvertTo-SecureString $FarmAdminPassword -AsPlainText -Force)
 	try
     {		
@@ -68,7 +74,7 @@ function Get-TargetResource
         DbServer = $DbServer;
         ConfigurationDbName = $ConfigurationDbName;
         CAContentDbName = $CAContentDbName;
-		FarmCreated = !($spFarm -eq $null);
+		JoinedToFarm = !($spFarm -eq $null);
     }
 }
 
@@ -97,6 +103,12 @@ function Set-TargetResource
         [parameter(Mandatory)]
         [string] $CAContentDbName,
 
+		[parameter(Mandatory)]
+		[UInt64] $RetryIntervalSec,
+        
+		[parameter(Mandatory)]
+		[UInt32] $RetryCount,
+		
         [parameter(Mandatory)]
         [string] $LogLocation,
 
@@ -107,7 +119,7 @@ function Set-TargetResource
         [PSCredential] $SqlAdministratorCredential
     )       
 	
-    $FarmAdministratorCredential = New-Object PSCredential $FarmAdmin, (ConvertTo-SecureString $FarmAdminPassword -AsPlainText -Force)		
+    $FarmAdministratorCredential = New-Object PSCredential $FarmAdmin, (ConvertTo-SecureString $FarmAdminPassword -AsPlainText -Force)
     try
     {		
         ($oldToken, $context, $newToken) = ImpersonateAs -cred $FarmAdministratorCredential  
@@ -118,9 +130,10 @@ function Set-TargetResource
         # disable loopback to fix 401s from SP Webs Service calls
         New-ItemProperty HKLM:\System\CurrentControlSet\Control\Lsa -Name DisableLoopbackCheck -Value 1 -PropertyType dword -Force -ErrorAction Ignore | Out-Null
 
-        CreateFarm -FarmAdmin $FarmAdmin -FarmAdminPassword $FarmAdminPassword -FarmPassphrase $FarmPassphrase `
+        JoinFarm -FarmAdmin $FarmAdmin -FarmAdminPassword $FarmAdminPassword -FarmPassphrase $FarmPassphrase `
                          -DbServer $DbServer -ConfigurationDbName $ConfigurationDbName -CAContentDbName $CAContentDbName `
-                         -SqlAdministratorCredential $SqlAdministratorCredential
+                         -RetryIntervalSec $RetryIntervalSec -RetryCount $RetryCount `
+						 -SqlAdministratorCredential $SqlAdministratorCredential
 
         Write-Verbose "Configuring SharePoint..."
         
@@ -168,6 +181,12 @@ function Test-TargetResource
         [parameter(Mandatory)]
         [string] $CAContentDbName,
 
+		[parameter(Mandatory)]
+		[UInt64] $RetryIntervalSec,
+        
+		[parameter(Mandatory)]
+		[UInt32] $RetryCount,
+		
         [parameter(Mandatory)]
         [string] $LogLocation,
 
@@ -235,7 +254,7 @@ function CloseUserToken([IntPtr] $token)
     }
 }
 
-function CreateFarm(
+function JoinFarm(
     [Parameter(Mandatory)]
     [string]$DbServer, 
     [Parameter(Mandatory)]
@@ -248,36 +267,54 @@ function CreateFarm(
     [string]$ConfigurationDbName,
     [Parameter(Mandatory)]
     [string]$CAContentDbName,
+	[parameter(Mandatory)]
+	[UInt64] $RetryIntervalSec,
     [parameter(Mandatory)]
-    [PSCredential] $SqlAdministratorCredential
+	[UInt32] $RetryCount,
+    [parameter(Mandatory)]
+    [PSCredential] $SqlAdministratorCredential	
 )
 {    
     $farmCredential = New-Object PSCredential $FarmAdmin, (ConvertTo-SecureString $FarmAdminPassword -AsPlainText -Force)
 	$secPhrase = ConvertTo-SecureString $FarmPassphrase -AsPlainText -Force
-
-	# Look for an existing farm and join the farm if not already joined, or create a new farm
-	Write-Verbose "Checking farm membership in [$ConfigurationDbName]..."
+	$joinedFarm = $false
 	$spFarm = $null
+	
 	Try 
 	{ 
 		$spFarm = Get-SPFarm | where Name -eq $ConfigurationDbName -ErrorAction SilentlyContinue 
-	} 
-	Catch {}
-
-	If (!$spFarm)
+	}
+	Catch {}	
+	
+	If(!$spFarm)
 	{
-		New-SPConfigurationDatabase -DatabaseName $ConfigurationDbName -DatabaseServer $DbServer -DatabaseCredentials $SqlAdministratorCredential -AdministrationContentDatabaseName $CAContentDbName -Passphrase $secPhrase -FarmCredentials $farmCredential
-		
-		If (!$?) 
+		for ($count = 0; $count -lt $RetryCount; $count++)
 		{
-			Throw "Error creating new farm configuration database"
+			Write-Verbose "Attempting to join farm on [$ConfigurationDbName]..."
+			Connect-SPConfigurationDatabase -DatabaseName $ConfigurationDbName -Passphrase $secPhrase -DatabaseServer $DbServer -DatabaseCredentials $SqlAdministratorCredential -ErrorAction SilentlyContinue
+			
+			If (!$?)
+			{			
+				Write-Verbose "No existing SharePoint farm found on [$ConfigurationDbName]. Will retry again after $RetryIntervalSec sec ..."
+				Start-Sleep -Seconds $RetryIntervalSec				
+			}
+			Else
+			{
+				Write-Verbose "Joined farm on [$ConfigurationDbName]..."
+				$joinedFarm = $true
+			}
 		}
-		Write-Verbose "Created new farm on [$ConfigurationDbName]."			
 	}
 	Else
 	{
 		Write-Verbose "Already joined to farm on [$ConfigurationDbName]."
+		$joinedFarm = $true
 	}
+	
+	If (!$joinedFarm)
+    {
+        throw "SharePoint farm not found after $count attempt with $RetryIntervalSec sec interval"
+    }
 }
 
 function ConfigureLogging(

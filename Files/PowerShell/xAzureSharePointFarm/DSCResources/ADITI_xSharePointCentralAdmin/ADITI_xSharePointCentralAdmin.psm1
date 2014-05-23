@@ -1,5 +1,5 @@
 ﻿#
-# xAzureCluster: DSC resource to configure a Failover Cluster consisting of Windows Azure VMs.
+# xSharePointCentralAdmin: DSC resource to create central admin site for SharePoint farm.
 #
 
 #

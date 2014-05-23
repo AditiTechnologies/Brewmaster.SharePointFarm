@@ -1,5 +1,5 @@
 ﻿#
-# xAzureCluster: DSC resource to configure a Failover Cluster consisting of Windows Azure VMs.
+# xSharePointWebApplication: DSC resource to create an empty SharePoint web application.
 #
 
 #

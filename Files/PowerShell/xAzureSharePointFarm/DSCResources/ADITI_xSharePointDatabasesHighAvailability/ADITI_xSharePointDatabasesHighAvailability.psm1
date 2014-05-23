@@ -1,5 +1,5 @@
 ﻿#
-# xSqlHAGroup: DSC resource to add database to a Sql High Availability (HA) Group.
+# xSharePointDatabasesHighAvailability: DSC resource to SharePoint databases to SQL High Availability (HA) Group.
 #
 
 #
