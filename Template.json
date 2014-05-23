@@ -1211,10 +1211,7 @@
                         "Ensure": "Present",
                         "IncludeAllSubFeature": "true",
                         "LogPath": "%BrewmasterDir%\\Logs\\Install-RSATADPowershell.log"
-                    },
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spapp1"
-                    ]
+                    }
                 },
                 {
                     "Type": "xADUser",
@@ -1228,9 +1225,6 @@
                         "Password": "%%New-Object PSCredential \"{{Domain}}\\{{FarmAdminName}}\", (ConvertTo-SecureString \"{{FarmAdminPassword}}\" -AsPlainText -Force)",
                         "Ensure": "Present"
                     },
-                    "Nodes": [
-                        "{{SharepointCloudService}}.spapp1"
-                    ],
                     "Requires": [
                         "[WindowsFeature]RSATADPowershell"
                     ]
