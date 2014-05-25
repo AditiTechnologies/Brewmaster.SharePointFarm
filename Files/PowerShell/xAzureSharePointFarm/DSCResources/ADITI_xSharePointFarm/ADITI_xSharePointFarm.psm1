@@ -26,12 +26,6 @@ function Get-TargetResource
 
         [parameter(Mandatory)]
         [string] $CAContentDbName,
-
-        [parameter(Mandatory)]
-        [string] $LogLocation,
-
-        [parameter(Mandatory)]
-        [Uint32] $LogDiskSpaceUsageGB,			
         
         [parameter(Mandatory)]
         [PSCredential] $SqlAdministratorCredential
@@ -95,13 +89,7 @@ function Set-TargetResource
         [string] $ConfigurationDbName,
 
         [parameter(Mandatory)]
-        [string] $CAContentDbName,
-
-        [parameter(Mandatory)]
-        [string] $LogLocation,
-
-        [parameter(Mandatory)]
-        [Uint32] $LogDiskSpaceUsageGB,
+        [string] $CAContentDbName,        
         
         [parameter(Mandatory)]
         [PSCredential] $SqlAdministratorCredential
@@ -121,13 +109,6 @@ function Set-TargetResource
         CreateFarm -FarmAdmin $FarmAdmin -FarmAdminPassword $FarmAdminPassword -FarmPassphrase $FarmPassphrase `
                          -DbServer $DbServer -ConfigurationDbName $ConfigurationDbName -CAContentDbName $CAContentDbName `
                          -SqlAdministratorCredential $SqlAdministratorCredential
-
-        Write-Verbose "Configuring SharePoint..."
-        
-        ConfigureLogging -LogLocation $LogLocation -LogDiskSpaceUsageGB $LogDiskSpaceUsageGB
-                
-        ConfigureSharePoint
-
     }
     finally
     {
@@ -167,12 +148,6 @@ function Test-TargetResource
 
         [parameter(Mandatory)]
         [string] $CAContentDbName,
-
-        [parameter(Mandatory)]
-        [string] $LogLocation,
-
-        [parameter(Mandatory)]
-        [Uint32] $LogDiskSpaceUsageGB,			
         
         [parameter(Mandatory)]
         [PSCredential] $SqlAdministratorCredential
@@ -278,55 +253,4 @@ function CreateFarm(
 	{
 		Write-Verbose "Already joined to farm on [$ConfigurationDbName]."
 	}
-}
-
-function ConfigureLogging(
-    [Parameter(Mandatory)]
-    [string]$LogLocation, 
-    [Parameter(Mandatory)]
-    [Uint32]$LogDiskSpaceUsageGB
-)
-{
-    # Configure logging
-    Write-Verbose "Setting log location [$LogLocation] and enabling EventLog Flood Protection"
-    Set-SPLogLevel -TraceSeverity Monitorable
-    Set-SPDiagnosticConfig -LogLocation $LogLocation -EventLogFloodProtectionEnabled
-    if ($LogDiskSpaceUsageGB > 0)
-    {
-        Write-Verbose "Limiting log size to [$LogDiskSpaceUsageGB GB]"
-        Set-SPDiagnosticConfig -LogMaxDiskSpaceUsageEnabled -LogDiskSpaceUsageGB $LogDiskSpaceUsageGB
-    }
-}
-
-function ConfigureSharePoint()
-{    
-    # Install help collections
-    Write-Verbose "Install help collections..."
-    Install-SPHelpCollection -All
-                
-    # Secure the SharePoint resources
-    Write-Verbose "Securing SharePoint resources..."
-    Initialize-SPResourceSecurity
-                    
-    # Install services
-    Write-Verbose "Installing services..."
-    Install-SPService
-                    
-    # Register SharePoint features
-    Write-Verbose "Registering SharePoint features..."
-    Install-SPFeature -AllExistingFeatures -Force | Out-Null
-
-    # Install application content files
-    Write-Verbose "Installing application content files..."
-    Install-SPApplicationContent
-
-    # Let's make sure the SharePoint Timer Service (SPTimerV4) is running
-    # Per workaround in http://www.paulgrimley.com/2010/11/side-effects-of-attaching-additional.html
-    $timersvc = Get-Service SPTimerV4
-    If ($timersvc.Status -eq "Stopped")
-    {
-        Write-Verbose "Starting $($timersvc.DisplayName) service..."
-        Start-Service $timersvc
-        If (!$?) {Throw "Could not start $($timersvc.DisplayName) service!"}
-    }    
 }

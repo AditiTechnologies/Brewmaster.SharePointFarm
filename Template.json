@@ -1271,8 +1271,6 @@
                         "DbServer": "{{AvailabilityGroupName}}Listener",
                         "ConfigurationDbName": "SP_Config",
                         "CAContentDbName": "SP_Content_Admin",
-                        "LogLocation": "F:\\Logs",
-                        "LogDiskSpaceUsageGB": "%%4",
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
                     },
 					"Nodes": [
@@ -1296,8 +1294,8 @@
                         "CAContentDbName": "SP_Content_Admin",
                         "LogLocation": "F:\\Logs",
                         "LogDiskSpaceUsageGB": "%%4",
-						"RetryIntervalSec": "%%120",
-                        "RetryCount": "%%20",
+						"RetryIntervalSec": "%%180",
+                        "RetryCount": "%%15",
                         "SqlAdministratorCredential": "%%New-Object PSCredential \"sa\", (ConvertTo-SecureString \"{{SqlAdminPassword}}\" -AsPlainText -Force)"
                     },
                     "Requires": [
