@@ -324,6 +324,11 @@ function ConfigureLogging(
     [Uint32]$LogDiskSpaceUsageGB
 )
 {
+	If(Test-Path %BrewmasterDir%\temp\SPLoggingConfigured.txt)
+	{
+		return
+	}
+	
     # Configure logging
     Write-Verbose "Setting log location [$LogLocation] and enabling EventLog Flood Protection"
     Set-SPLogLevel -TraceSeverity Monitorable
@@ -333,10 +338,17 @@ function ConfigureLogging(
         Write-Verbose "Limiting log size to [$LogDiskSpaceUsageGB GB]"
         Set-SPDiagnosticConfig -LogMaxDiskSpaceUsageEnabled -LogDiskSpaceUsageGB $LogDiskSpaceUsageGB
     }
+	
+	New-Item %BrewmasterDir%\temp\SPLoggingConfigured.txt -type file -force -value "SharePoint logging configured sucessfully..."
 }
 
 function ConfigureSharePoint()
-{    
+{
+	If(Test-Path %BrewmasterDir%\temp\SPConfigured.txt)
+	{
+		return
+	}
+	
     # Install help collections
     Write-Verbose "Install help collections..."
     Install-SPHelpCollection -All
@@ -365,5 +377,7 @@ function ConfigureSharePoint()
         Write-Verbose "Starting $($timersvc.DisplayName) service..."
         Start-Service $timersvc
         If (!$?) {Throw "Could not start $($timersvc.DisplayName) service!"}
-    }    
+    }
+	
+	New-Item %BrewmasterDir%\temp\SPConfigured.txt -type file -force -value "SharePoint configured sucessfully..."
 }
