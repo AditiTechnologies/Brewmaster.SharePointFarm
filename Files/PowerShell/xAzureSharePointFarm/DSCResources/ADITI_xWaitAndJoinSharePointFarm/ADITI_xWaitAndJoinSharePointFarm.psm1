@@ -324,27 +324,27 @@ function ConfigureLogging(
     [Uint32]$LogDiskSpaceUsageGB
 )
 {
-	If(Test-Path %BrewmasterDir%\temp\SPLoggingConfigured.txt)
+	If(Test-Path $env:BrewmasterDir\Logs\SPLoggingConfigured.txt)
 	{
 		return
 	}
 	
     # Configure logging
     Write-Verbose "Setting log location [$LogLocation] and enabling EventLog Flood Protection"
-    Set-SPLogLevel -TraceSeverity Monitorable
-    Set-SPDiagnosticConfig -LogLocation $LogLocation -EventLogFloodProtectionEnabled
+    Set-SPLogLevel -TraceSeverity Monitorable | Out-Null
+    Set-SPDiagnosticConfig -LogLocation $LogLocation -EventLogFloodProtectionEnabled | Out-Null
     if ($LogDiskSpaceUsageGB > 0)
     {
         Write-Verbose "Limiting log size to [$LogDiskSpaceUsageGB GB]"
-        Set-SPDiagnosticConfig -LogMaxDiskSpaceUsageEnabled -LogDiskSpaceUsageGB $LogDiskSpaceUsageGB
+        Set-SPDiagnosticConfig -LogMaxDiskSpaceUsageEnabled -LogDiskSpaceUsageGB $LogDiskSpaceUsageGB | Out-Null
     }
 	
-	New-Item %BrewmasterDir%\temp\SPLoggingConfigured.txt -type file -force -value "SharePoint logging configured sucessfully..."
+	New-Item $env:BrewmasterDir\Logs\SPLoggingConfigured.txt -type file -force -value "SharePoint logging configured sucessfully..."
 }
 
 function ConfigureSharePoint()
 {
-	If(Test-Path %BrewmasterDir%\temp\SPConfigured.txt)
+	If(Test-Path $env:BrewmasterDir\Logs\SPConfigured.txt)
 	{
 		return
 	}
@@ -355,11 +355,11 @@ function ConfigureSharePoint()
                 
     # Secure the SharePoint resources
     Write-Verbose "Securing SharePoint resources..."
-    Initialize-SPResourceSecurity
+    Initialize-SPResourceSecurity | Out-Null
                     
     # Install services
     Write-Verbose "Installing services..."
-    Install-SPService
+    Install-SPService | Out-Null
                     
     # Register SharePoint features
     Write-Verbose "Registering SharePoint features..."
@@ -367,7 +367,7 @@ function ConfigureSharePoint()
 
     # Install application content files
     Write-Verbose "Installing application content files..."
-    Install-SPApplicationContent
+    Install-SPApplicationContent | Out-Null
 
     # Let's make sure the SharePoint Timer Service (SPTimerV4) is running
     # Per workaround in http://www.paulgrimley.com/2010/11/side-effects-of-attaching-additional.html
@@ -379,5 +379,5 @@ function ConfigureSharePoint()
         If (!$?) {Throw "Could not start $($timersvc.DisplayName) service!"}
     }
 	
-	New-Item %BrewmasterDir%\temp\SPConfigured.txt -type file -force -value "SharePoint configured sucessfully..."
+	New-Item $env:BrewmasterDir\Logs\SPConfigured.txt -type file -force -value "SharePoint configured sucessfully..."
 }
