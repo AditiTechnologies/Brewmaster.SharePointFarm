@@ -302,6 +302,7 @@ function JoinFarm(
 			{
 				Write-Verbose "Joined farm on [$ConfigurationDbName]..."
 				$joinedFarm = $true
+				break
 			}
 		}
 	}
@@ -351,7 +352,7 @@ function ConfigureSharePoint()
 	
     # Install help collections
     Write-Verbose "Install help collections..."
-    Install-SPHelpCollection -All
+    Install-SPHelpCollection -All | Out-Null
                 
     # Secure the SharePoint resources
     Write-Verbose "Securing SharePoint resources..."
