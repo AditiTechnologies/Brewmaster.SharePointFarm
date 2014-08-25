@@ -133,7 +133,7 @@
             "Description": "Password of local administrator account.",
             "MaskValue": true,
             "AllowedRegex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$",
-			"AllowedDescription": "Complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
+			"AllowedDescription": "Please provide a complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
         },
         {
             "Name": "DSRMPassPhrase",
@@ -142,7 +142,7 @@
             "Description": "Safemode Password for domain",
             "MaskValue": true,
             "AllowedRegex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$",
-			"AllowedDescription": "Complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
+			"AllowedDescription": "Please provide a complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
         },
         {
             "Name": "SqlAdminPassword",
@@ -151,7 +151,7 @@
             "Description": "Password for SQL sa account.",
 			"MaskValue": true,
             "AllowedRegex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$",
-			"AllowedDescription": "Complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
+			"AllowedDescription": "Please provide a complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
         },
         {
             "Name": "SqlSvcAccountName",
@@ -168,7 +168,7 @@
             "Description": "Password of SQL service account.",
             "MaskValue": true,
             "AllowedRegex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$",
-			"AllowedDescription": "Complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
+			"AllowedDescription": "Please provide a complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
         },
         {
             "Name": "FarmAdminName",
@@ -185,7 +185,7 @@
             "Description": "Password of sharepoint farm administrator account.",
             "MaskValue": true,
             "AllowedRegex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$",
-			"AllowedDescription": "Complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
+			"AllowedDescription": "Please provide a complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
         },
         {
             "Name": "FarmPassphrase",
@@ -194,7 +194,7 @@
             "Description": "Safemode Password for sharepoint farm",
             "MaskValue": true,
             "AllowedRegex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,}$",
-			"AllowedDescription": "Complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
+			"AllowedDescription": "Please provide a complex password comprised of minimum 8 characters with atleast 1 alphabet, 1 number and 1 special character."
         }
 		{% assign fqdnSplit = FQDN | split: '.' -%}
 		{% assign Domain = fqdnSplit[0] -%}
