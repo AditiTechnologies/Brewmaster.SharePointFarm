@@ -40,7 +40,9 @@ function Get-TargetResource
         [PSCredential] $FarmAdministratorCredential,
         
         [parameter(Mandatory)]
-        [PSCredential] $SqlAdministratorCredential
+        [PSCredential] $SqlAdministratorCredential,
+
+        [UInt32] $RetryCount = 3
     )
 
     
@@ -94,7 +96,9 @@ function Set-TargetResource
         [PSCredential] $FarmAdministratorCredential,
         
         [parameter(Mandatory)]
-        [PSCredential] $SqlAdministratorCredential
+        [PSCredential] $SqlAdministratorCredential,
+
+        [UInt32] $RetryCount = 3
     )   
 		
     try
@@ -109,32 +113,9 @@ function Set-TargetResource
 	    $existingWebApp = Get-SPWebApplication | where {$_.Url.Trim('/') -eq $SiteUrl}
 	    if (!$existingWebApp)
 	    {
-		    Write-Verbose "Creating web application [$SiteUrl]"
-		    # Check if the App Pool exists...
-		    $appPoolAccountSwitch = ""
-		    if (!(Get-SPWebApplication | where { $_.ApplicationPool.Name -eq $AppPoolName })) {
-			    $appPoolAccountSwitch = @{ApplicationPoolAccount = $AppPoolAccount}
-		    }
-		    $hostHeader = $SiteUrl -replace "http://", "" -replace "https://", ""
-		    $authProvider = New-SPAuthenticationProvider -UseWindowsIntegratedAuthentication -UseBasicAuthentication
-		    $spwebapp = New-SPWebApplication -Name $WebAppName `
-										     -URL $SiteUrl `
-										     -Port $Port `
-										     -HostHeader $hostHeader `
-										     -ApplicationPool $AppPoolName @appPoolAccountSwitch `
-										     -AuthenticationProvider $authProvider `
-                                             -DatabaseCredentials $SqlAdministratorCredential `
-										     -DatabaseName "SP_WSS_Content"
-		    if (!$?) { Throw $Error[0] }
-		    Write-Verbose "Created Web Application [$WebAppName] at [http:\\${SiteUrl}:$Port]."
-
-		    $spsite = New-SPSite -Name $SiteName -URL $SiteUrl -Template $SiteTemplate -OwnerAlias $SiteOwner
-		    if (!$?) { Throw $Error[0] }
-		    Write-Verbose "Created site collection [$SiteName]."
-    
-		    New-SPAlternateUrl -WebApplication $SiteUrl -URL $SiteUrl -Zone Default
-		    if (!$?) { Throw $Error[0] }
-		    Write-Verbose "Added Alternative Access Mapping for Web App."
+		    CreateWebApplicationWithRetries -RetryCount $RetryCount -WebAppName $WebAppName -SiteUrl $SiteUrl -SiteTemplate $SiteTemplate `
+                                 -SiteOwner $SiteOwner -AppPoolName $AppPoolName -AppPoolAccount $AppPoolAccount `
+                                 -SqlAdministratorCredential $SqlAdministratorCredential                                 
 	    }
 	    else
 	    {
@@ -212,11 +193,78 @@ function Test-TargetResource
         [PSCredential] $FarmAdministratorCredential,
         
         [parameter(Mandatory)]
-        [PSCredential] $SqlAdministratorCredential
+        [PSCredential] $SqlAdministratorCredential,
+
+        [UInt32] $RetryCount = 3
     )
 
     # Set-TargetResource is idempotent
     return $false
+}
+
+function CreateWebApplicationWithRetries
+{
+    param(
+       $RetryCount,
+       $WebAppName,
+       $SiteUrl,
+       $SiteTemplate,
+       $SiteOwner,
+       $AppPoolName,
+       $AppPoolAccount,
+       $SqlAdministratorCredential
+    )
+    for($count = 0; $count -lt $RetryCount; $count++)
+    {
+        try
+        {
+            Write-Verbose "Creating web application [$SiteUrl]"
+		    # Check if the App Pool exists...
+		    $appPoolAccountSwitch = ""
+		    if (!(Get-SPWebApplication | where { $_.ApplicationPool.Name -eq $AppPoolName })) {
+			    $appPoolAccountSwitch = @{ApplicationPoolAccount = $AppPoolAccount}
+		    }
+		    $hostHeader = $SiteUrl -replace "http://", "" -replace "https://", ""
+		    $authProvider = New-SPAuthenticationProvider -UseWindowsIntegratedAuthentication -UseBasicAuthentication
+		    $spwebapp = New-SPWebApplication -Name $WebAppName `
+										     -URL $SiteUrl `
+										     -Port $Port `
+										     -HostHeader $hostHeader `
+										     -ApplicationPool $AppPoolName @appPoolAccountSwitch `
+										     -AuthenticationProvider $authProvider `
+                                             -DatabaseCredentials $SqlAdministratorCredential `
+										     -DatabaseName "SP_WSS_Content"
+		    if (!$?) { Throw $Error[0] }
+		    Write-Verbose "Created Web Application [$WebAppName] at [http:\\${SiteUrl}:$Port]."
+
+		    $spsite = New-SPSite -Name $SiteName -URL $SiteUrl -Template $SiteTemplate -OwnerAlias $SiteOwner
+		    if (!$?) { Throw $Error[0] }
+		    Write-Verbose "Created site collection [$SiteName]."
+    
+		    New-SPAlternateUrl -WebApplication $SiteUrl -URL $SiteUrl -Zone Default
+		    if (!$?) { Throw $Error[0] }
+		    Write-Verbose "Added Alternative Access Mapping for Web App."
+            break
+        }
+        catch
+        {
+            # If this is the last retry attempt then give up and re-throw...
+            if($count -eq ($RetryCount - 1))
+            {
+                Throw
+            }
+            else
+            {
+                $errorMessage = $_.Exception.Message
+                Write-Verbose "Commencing retry since web application could not be created. Error :: $errorMessage"
+                $spwebapp = Get-SPWebApplication $WebAppName
+                if($spwebapp)
+                {
+                    $spwebapp | Remove-SPWebApplication -Confirm:$false
+                }
+            }
+        }
+    }
 }
 
 
