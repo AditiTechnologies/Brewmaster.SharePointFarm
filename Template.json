@@ -53,6 +53,11 @@
             "TypeHint": "AzureCloudServiceName",
             "Description": "Name of the Azure Cloud Service."
         },
+		{
+			"Name": "SSAOReservedIPName",
+			"Type": "String",
+			"Description": "Reserved IP for SQLAlwaysOn listener. Can be left empty if not needed." 
+		},
         {
             "Name": "ClusterName",
             "Type": "String",
@@ -238,7 +243,13 @@
                 ],
                 "VPNClientAddressSpaces": []
             }
-        ]
+        ],
+		"ReservedIPs":[
+			{
+				"Name": "{{SSAOReservedIPName}}",
+				"Label": "Reserved IP for SQL AlwaysOn Service"
+			}
+		]
     },
     "AffinityGroup": {
         "Name": "{{AffinityGroup}}",
@@ -338,6 +349,7 @@
             "Description": "SQL Server AlwaysOn deployment.",
             "Deployment": {
                 "VirtualNetwork": "{{VnetName}}",
+				"ReservedIP":"{{SSAOReservedIPName}}",
                 "VirtualMachines": [
                     {
                         "Name": "quorum",
