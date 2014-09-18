@@ -54,10 +54,10 @@
             "Description": "Name of the Azure Cloud Service."
         },
 		{
-			"Name": "SSAOReservedIPName",
-			"Type": "String",
-			"Description": "Reserved IP for SQLAlwaysOn listener. Can be left empty if not needed." 
-		},
+            "Name": "SSAOCloudServiceReservedIP",
+            "Type": "String",
+            "Description": "Name of Azure ReservedIP for SQL Server Availability Group Listener."
+        },
         {
             "Name": "ClusterName",
             "Type": "String",
@@ -244,10 +244,10 @@
                 "VPNClientAddressSpaces": []
             }
         ],
-		"ReservedIPs":[
+		"ReservedIPs": [
 			{
-				"Name": "{{SSAOReservedIPName}}",
-				"Label": "Reserved IP for SQL AlwaysOn Service"
+				"Name": "{{SSAOCloudServiceReservedIP}}",
+				"Label": "Reserved IP address for the SSAO service"
 			}
 		]
     },
@@ -349,7 +349,7 @@
             "Description": "SQL Server AlwaysOn deployment.",
             "Deployment": {
                 "VirtualNetwork": "{{VnetName}}",
-				"ReservedIP":"{{SSAOReservedIPName}}",
+				"ReservedIP":"{{SSAOCloudServiceReservedIP}}",
                 "VirtualMachines": [
                     {
                         "Name": "quorum",
