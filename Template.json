@@ -1,6 +1,6 @@
 {
-    "Name": "SharepointFarm",
-    "Description": "Creates a highly available SharePoint 2013 farm deployment.",
+    "Name": "Sharepoint 2013 Farm",
+    "Description": "Creates a highly available SharePoint 2013 farm on Windows Azure IaaS .",
     "Version": "0.1.0",
     "Parameters": [
         {
@@ -349,7 +349,7 @@
             "Description": "SQL Server AlwaysOn deployment.",
             "Deployment": {
                 "VirtualNetwork": "{{VnetName}}",
-				"ReservedIP":"{{SSAOCloudServiceReservedIP}}",
+		"ReservedIP":"{{SSAOCloudServiceReservedIP}}",
                 "VirtualMachines": [
                     {
                         "Name": "quorum",

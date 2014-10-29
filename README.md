@@ -2,13 +2,15 @@
 Using the latest available image for SharePoint 2013 in the azure gallery, it will create a highly available SharePoint farm and in the process setup Active Directory, Windows Failover Cluster and SQL Server Availability Group for the SharePoint databases.
 
 ###Virtual Machines (VMs)
-1.Two VMs will be created for setting Active Directory and they will act as the primary and secondary DNS. 
-2.The number of SQL VMs is controlled by the input parameter 'NumberOfSQLNodes, but a minimum of two is needed for creating the availability group. The minimum recommended size for SQL VM is 'Large'.
-3.A single VM for having a 'Node and File Share Majority' quorum configuration in the failover cluster, with the VM acting as a 'file share witness'.
-4.The number of app server VMs in the farm is controlled by the input parameter 'AppServerCount'.
-5.The number of web server VMs in the farm is controlled by the input parameter 'WebServerCount'.
+
+1. Two VMs will be created for setting Active Directory and they will act as the primary and secondary DNS. 
+2. The number of SQL VMs is controlled by the input parameter 'NumberOfSQLNodes, but a minimum of two is needed for creating the availability group. The minimum recommended size for SQL VM is 'Large'.
+3. A single VM for having a 'Node and File Share Majority' quorum configuration in the failover cluster, with the VM acting as a 'file share witness'.
+4. The number of app server VMs in the farm is controlled by the input parameter 'AppServerCount'.
+5. The number of web server VMs in the farm is controlled by the input parameter 'WebServerCount'.
 
 ###SharePoint Details
+
 1. Central Admin - `http://<SharepointCloudService>.cloudapp.net:20000`
 2. Default Website - `http://<SharepointCloudService>.cloudapp.net`
 NOTE: Use the farm admin credentials (provided at the time of deployment) for authentication.
