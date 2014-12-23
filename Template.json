@@ -214,16 +214,6 @@
 	}
   ],
   "ParameterMaps": [
-    {
-      "ParameterName": "ADCloudService",
-      "TemplateName": "ad",
-      "TemplateParameterName": "CloudService"
-    },
-    {
-      "ParameterName": "ADVMSize",
-      "TemplateName": "ad",
-      "TemplateParameterName": "VMSize"
-    },
 	{
       "ParameterName": "SQLAGCloudService",
       "TemplateName": "sqlag",
