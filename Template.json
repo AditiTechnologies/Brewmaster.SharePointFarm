@@ -76,14 +76,6 @@
 		"Maximum": 32
 	},
 	{
-		"Name": "DatabaseName",
-		"Type": "String",
-		"Description": "Name of the database which is to be added to the SQL Server Availability Group.",
-		"Minimum": 1,
-		"Maximum": 64,
-		"Default": "SampleDb"
-	},
-	{
 		"Name": "NumberOfSQLNodes",
 		"Type": "Number",
 		"Description": "No of SQL nodes. A minimum of two are required to create SQL Server Availability Group.",
